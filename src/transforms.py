@@ -50,6 +50,7 @@ improved_transform = transforms.Compose([
 ])
 
 
+
 # Section 1 - (Domain Generalization)Domain Augmentation
 
 dg_transform = transforms.Compose([

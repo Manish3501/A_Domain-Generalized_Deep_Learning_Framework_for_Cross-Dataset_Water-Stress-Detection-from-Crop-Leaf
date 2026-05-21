@@ -216,3 +216,68 @@ def evaluate_improved_ensemble(
     print(f"Improved Ensemble Accuracy: {accuracy:.2f}%")
 
     return accuracy
+
+
+# ============================================================
+# SECTION 6 - FEATURE FUSION EVALUATION
+# ============================================================
+
+def evaluate_fusion_model(
+    model,
+    fusion_tomato_test_loader,
+    fusion_maize_test_loader,
+    fusion_maize2_test_loader,
+    device
+):
+
+    model.eval()
+
+    correct = 0
+    total = 0
+
+    with torch.no_grad():
+
+        for (
+
+            (tomato_imgs, tomato_labels),
+
+            (maize_imgs, maize_labels),
+
+            (maize2_imgs, maize2_labels)
+
+        ) in zip(
+
+            fusion_tomato_test_loader,
+            fusion_maize_test_loader,
+            fusion_maize2_test_loader
+        ):
+
+            # Move to device
+            tomato_imgs = tomato_imgs.to(device)
+
+            maize_imgs = maize_imgs.to(device)
+
+            maize2_imgs = maize2_imgs.to(device)
+
+            labels = tomato_labels.to(device)
+
+            # Forward pass
+            outputs = model(
+                tomato_imgs,
+                maize_imgs,
+                maize2_imgs
+            )
+
+            _, predicted = torch.max(outputs, 1)
+
+            total += labels.size(0)
+
+            correct += (
+                predicted == labels
+            ).sum().item()
+
+    accuracy = 100 * correct / total
+
+    print(f"Feature Fusion Accuracy: {accuracy:.2f}%")
+
+    return accuracy

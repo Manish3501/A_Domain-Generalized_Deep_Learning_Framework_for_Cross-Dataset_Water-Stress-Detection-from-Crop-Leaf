@@ -96,29 +96,37 @@ def train_model(
 # ============================================================
 # SECTION 2 - FEATURE FUSION TRAINING
 # ============================================================
-# Trains fusion model using:
-# - Tomato features
-# - Maize features
-# - Maize2 features
 
 def train_fusion_model(
     model,
     fusion_tomato_loader,
     fusion_maize_loader,
     fusion_maize2_loader,
+    fusion_tomato_val_loader,
+    fusion_maize_val_loader,
+    fusion_maize2_val_loader,
     fusion_optimizer,
     fusion_criterion,
     device,
     epochs=10
 ):
 
-    model.train()
+    train_losses = []
+    val_accuracies = []
+
+    best_val_accuracy = 0.0
+    best_model_weights = None
 
     for epoch in range(epochs):
 
+        # ====================================================
+        # TRAINING
+        # ====================================================
+
+        model.train()
+
         running_loss = 0
 
-        # Load all 3 datasets together
         for (
 
             (tomato_imgs, tomato_labels),
@@ -141,7 +149,6 @@ def train_fusion_model(
 
             maize2_imgs = maize2_imgs.to(device)
 
-            # Use tomato labels
             labels = tomato_labels.to(device)
 
             # Clear gradients
@@ -170,9 +177,81 @@ def train_fusion_model(
 
         avg_loss = running_loss / len(fusion_tomato_loader)
 
+        train_losses.append(avg_loss)
+
+        # ====================================================
+        # VALIDATION
+        # ====================================================
+
+        model.eval()
+
+        correct = 0
+        total = 0
+
+        with torch.no_grad():
+
+            for (
+
+                (tomato_imgs, tomato_labels),
+
+                (maize_imgs, maize_labels),
+
+                (maize2_imgs, maize2_labels)
+
+            ) in zip(
+
+                fusion_tomato_val_loader,
+                fusion_maize_val_loader,
+                fusion_maize2_val_loader
+            ):
+
+                tomato_imgs = tomato_imgs.to(device)
+
+                maize_imgs = maize_imgs.to(device)
+
+                maize2_imgs = maize2_imgs.to(device)
+
+                labels = tomato_labels.to(device)
+
+                outputs = model(
+                    tomato_imgs,
+                    maize_imgs,
+                    maize2_imgs
+                )
+
+                _, predicted = torch.max(outputs, 1)
+
+                total += labels.size(0)
+
+                correct += (
+                    predicted == labels
+                ).sum().item()
+
+        val_accuracy = 100 * correct / total
+
+        val_accuracies.append(val_accuracy)
+
+        # Save best model
+        if val_accuracy > best_val_accuracy:
+
+            best_val_accuracy = val_accuracy
+
+            best_model_weights = {
+                k: v.clone()
+                for k, v in model.state_dict().items()
+            }
+
         print(f"Epoch [{epoch+1}/{epochs}]")
         print(f"Fusion Loss: {avg_loss:.4f}")
-        print("-" * 40)
+        print(f"Validation Accuracy: {val_accuracy:.2f}%")
+        print("-" * 50)
+
+    # Restore best weights
+    if best_model_weights:
+
+        model.load_state_dict(best_model_weights)
+
+    return train_losses, val_accuracies
 
 
 # ============================================================

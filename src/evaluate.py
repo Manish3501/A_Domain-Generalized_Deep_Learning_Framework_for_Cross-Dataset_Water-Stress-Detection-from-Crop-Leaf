@@ -281,3 +281,133 @@ def evaluate_fusion_model(
     print(f"Feature Fusion Accuracy: {accuracy:.2f}%")
 
     return accuracy
+
+
+
+# ============================================================
+# SECTION 7 - DOMAIN GENERALISATION EVALUATION
+# ============================================================
+
+def evaluate_dg_model(
+    model,
+    test_loader,
+    device,
+    dataset_name="Domain Generalisation"
+):
+
+    model.eval()
+
+    correct = 0
+    total = 0
+
+    # Per-domain tracking
+    domain_correct = {
+        0: 0,
+        1: 0,
+        2: 0
+    }
+
+    domain_total = {
+        0: 0,
+        1: 0,
+        2: 0
+    }
+
+    all_predictions = []
+    all_labels = []
+    all_domains = []
+
+    with torch.no_grad():
+
+        for images, labels, domains in test_loader:
+
+            # Move to device
+            images = images.to(device)
+
+            labels = labels.to(device)
+
+            domains = domains.to(device)
+
+            # Forward pass
+            stress_out, domain_out = model(images)
+
+            _, predicted = torch.max(stress_out, 1)
+
+            # Overall accuracy
+            total += labels.size(0)
+
+            correct += (
+                predicted == labels
+            ).sum().item()
+
+            # Per-domain accuracy
+            for i in range(labels.size(0)):
+
+                domain_id = domains[i].item()
+
+                domain_total[domain_id] += 1
+
+                if predicted[i] == labels[i]:
+
+                    domain_correct[domain_id] += 1
+
+            # Store results
+            all_predictions.extend(
+                predicted.cpu().numpy()
+            )
+
+            all_labels.extend(
+                labels.cpu().numpy()
+            )
+
+            all_domains.extend(
+                domains.cpu().numpy()
+            )
+
+    # ========================================================
+    # OVERALL ACCURACY
+    # ========================================================
+
+    accuracy = 100 * correct / total
+
+    print("=" * 50)
+
+    print(
+        f"  {dataset_name} Test Accuracy: "
+        f"{accuracy:.2f}%"
+    )
+
+    print("=" * 50)
+
+    # ========================================================
+    # PER-DOMAIN ACCURACY
+    # ========================================================
+
+    domain_names = {
+        0: "Tomato",
+        1: "Maize (folder)",
+        2: "Maize2 (.npy)"
+    }
+
+    print("\nPer-Domain Accuracy:")
+
+    for domain_id in domain_total:
+
+        domain_acc = (
+            100 * domain_correct[domain_id]
+            / domain_total[domain_id]
+        )
+
+        print(
+            f"  {domain_names[domain_id]:20}: "
+            f"{domain_acc:.2f}%  "
+            f"({domain_correct[domain_id]}/"
+            f"{domain_total[domain_id]})"
+        )
+
+    return (
+        accuracy,
+        all_predictions,
+        all_labels,
+        all_domains
+    )

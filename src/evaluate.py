@@ -411,3 +411,129 @@ def evaluate_dg_model(
         all_labels,
         all_domains
     )
+
+
+# ============================================================
+# SECTION 8 - METRIC UTILITIES
+# ============================================================
+
+from sklearn.metrics import (
+
+    accuracy_score,
+
+    precision_score,
+
+    recall_score,
+
+    f1_score,
+
+    roc_auc_score,
+
+    confusion_matrix,
+
+    classification_report
+)
+
+
+def compute_all_metrics(
+    predictions,
+    labels,
+    probabilities,
+    model_name="Model"
+):
+
+    accuracy = accuracy_score(
+        labels,
+        predictions
+    )
+
+    precision = precision_score(
+        labels,
+        predictions
+    )
+
+    recall = recall_score(
+        labels,
+        predictions
+    )
+
+    f1 = f1_score(
+        labels,
+        predictions
+    )
+
+    auc = roc_auc_score(
+        labels,
+        probabilities
+    )
+
+    print("\n" + "=" * 60)
+
+    print(f"{model_name}")
+
+    print("=" * 60)
+
+    print(f"Accuracy : {accuracy:.4f}")
+
+    print(f"Precision: {precision:.4f}")
+
+    print(f"Recall   : {recall:.4f}")
+
+    print(f"F1 Score : {f1:.4f}")
+
+    print(f"AUC Score: {auc:.4f}")
+
+    print("\nClassification Report:\n")
+
+    print(
+        classification_report(
+            labels,
+            predictions
+        )
+    )
+
+    return {
+
+        "accuracy": accuracy,
+
+        "precision": precision,
+
+        "recall": recall,
+
+        "f1": f1,
+
+        "auc": auc
+    }
+
+
+# ============================================================
+# SECTION 9 - CONFUSION MATRIX
+# ============================================================
+
+def plot_confusion_matrix(
+    predictions,
+    labels,
+    title="Confusion Matrix"
+):
+
+    cm = confusion_matrix(
+        labels,
+        predictions
+    )
+
+    plt.figure(figsize=(6, 5))
+
+    sns.heatmap(
+        cm,
+        annot=True,
+        fmt="d",
+        cmap="Blues"
+    )
+
+    plt.title(title)
+
+    plt.xlabel("Predicted")
+
+    plt.ylabel("Actual")
+
+    plt.show()

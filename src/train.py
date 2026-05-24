@@ -22,6 +22,8 @@ def train_model(
 ):
 
     train_losses = []
+    train_accuracies = []
+
     val_accuracies = []
 
     for epoch in range(epochs):
@@ -32,10 +34,14 @@ def train_model(
 
         running_loss = 0
 
+        correct = 0
+        total = 0
+
         for images, labels in train_loader:
 
             # Move data to CPU/GPU
             images = images.to(device)
+
             labels = labels.to(device)
 
             # Clear old gradients
@@ -55,9 +61,22 @@ def train_model(
 
             running_loss += loss.item()
 
+            # Training accuracy
+            _, predicted = torch.max(outputs, 1)
+
+            total += labels.size(0)
+
+            correct += (
+                predicted == labels
+            ).sum().item()
+
         avg_train_loss = running_loss / len(train_loader)
 
+        train_accuracy = 100 * correct / total
+
         train_losses.append(avg_train_loss)
+
+        train_accuracies.append(train_accuracy)
 
         # ---------------- VALIDATION ----------------
 
@@ -71,6 +90,7 @@ def train_model(
             for images, labels in val_loader:
 
                 images = images.to(device)
+
                 labels = labels.to(device)
 
                 outputs = model(images)
@@ -79,18 +99,29 @@ def train_model(
 
                 total += labels.size(0)
 
-                correct += (predicted == labels).sum().item()
+                correct += (
+                    predicted == labels
+                ).sum().item()
 
         val_accuracy = 100 * correct / total
 
         val_accuracies.append(val_accuracy)
 
         print(f"Epoch [{epoch+1}/{epochs}]")
+
         print(f"Train Loss: {avg_train_loss:.4f}")
+
+        print(f"Train Accuracy: {train_accuracy:.2f}%")
+
         print(f"Validation Accuracy: {val_accuracy:.2f}%")
+
         print("-" * 40)
 
-    return train_losses, val_accuracies
+    return (
+        train_losses,
+        train_accuracies,
+        val_accuracies
+    )
 
 
 # ============================================================
@@ -112,9 +143,13 @@ def train_fusion_model(
 ):
 
     train_losses = []
+
+    train_accuracies = []
+
     val_accuracies = []
 
     best_val_accuracy = 0.0
+
     best_model_weights = None
 
     for epoch in range(epochs):
@@ -126,6 +161,9 @@ def train_fusion_model(
         model.train()
 
         running_loss = 0
+
+        correct = 0
+        total = 0
 
         for (
 
@@ -142,7 +180,6 @@ def train_fusion_model(
             fusion_maize2_loader
         ):
 
-            # Move to device
             tomato_imgs = tomato_imgs.to(device)
 
             maize_imgs = maize_imgs.to(device)
@@ -151,33 +188,41 @@ def train_fusion_model(
 
             labels = tomato_labels.to(device)
 
-            # Clear gradients
             fusion_optimizer.zero_grad()
 
-            # Forward pass
             outputs = model(
                 tomato_imgs,
                 maize_imgs,
                 maize2_imgs
             )
 
-            # Loss
             loss = fusion_criterion(
                 outputs,
                 labels
             )
 
-            # Backpropagation
             loss.backward()
 
-            # Update weights
             fusion_optimizer.step()
 
             running_loss += loss.item()
 
+            # Training accuracy
+            _, predicted = torch.max(outputs, 1)
+
+            total += labels.size(0)
+
+            correct += (
+                predicted == labels
+            ).sum().item()
+
         avg_loss = running_loss / len(fusion_tomato_loader)
 
+        train_accuracy = 100 * correct / total
+
         train_losses.append(avg_loss)
+
+        train_accuracies.append(train_accuracy)
 
         # ====================================================
         # VALIDATION
@@ -242,24 +287,29 @@ def train_fusion_model(
             }
 
         print(f"Epoch [{epoch+1}/{epochs}]")
+
         print(f"Fusion Loss: {avg_loss:.4f}")
+
+        print(f"Train Accuracy: {train_accuracy:.2f}%")
+
         print(f"Validation Accuracy: {val_accuracy:.2f}%")
+
         print("-" * 50)
 
-    # Restore best weights
     if best_model_weights:
 
         model.load_state_dict(best_model_weights)
 
-    return train_losses, val_accuracies
+    return (
+        train_losses,
+        train_accuracies,
+        val_accuracies
+    )
 
 
 # ============================================================
 # SECTION 3 - DOMAIN GENERALISATION TRAINING
 # ============================================================
-# DANN Training:
-# - Stress Classification
-# - Domain Invariance
 
 def train_domain_generalisation(
     model,
@@ -274,20 +324,20 @@ def train_domain_generalisation(
 ):
 
     train_stress_losses = []
+
     train_domain_losses = []
+
+    train_accuracies = []
+
     val_accuracies = []
 
     best_val_accuracy = 0.0
+
     best_model_weights = None
 
     for epoch in range(epochs):
 
         model.train()
-
-        # ------------------------------------------------
-        # Lambda Annealing
-        # ------------------------------------------------
-        # Gradually increase domain confusion strength
 
         p = epoch / epochs
 
@@ -296,7 +346,11 @@ def train_domain_generalisation(
         model.gradient_reversal.lambda_ = lambda_
 
         running_stress_loss = 0.0
+
         running_domain_loss = 0.0
+
+        correct = 0
+        total = 0
 
         # ---------------- TRAINING ----------------
 
@@ -310,25 +364,20 @@ def train_domain_generalisation(
 
             optimizer.zero_grad()
 
-            # Forward pass
             stress_out, domain_out = model(images)
 
-            # Stress classification loss
             stress_loss = dg_stress_criterion(
                 stress_out,
                 stress_labels
             )
 
-            # Domain classification loss
             domain_loss = dg_domain_criterion(
                 domain_out,
                 domain_labels
             )
 
-            # Combined loss
             total_loss = stress_loss + lambda_ * domain_loss
 
-            # Backpropagation
             total_loss.backward()
 
             optimizer.step()
@@ -337,19 +386,37 @@ def train_domain_generalisation(
 
             running_domain_loss += domain_loss.item()
 
-        avg_stress_loss = running_stress_loss / len(train_loader)
+            # Training accuracy
+            _, predicted = torch.max(stress_out, 1)
 
-        avg_domain_loss = running_domain_loss / len(train_loader)
+            total += stress_labels.size(0)
+
+            correct += (
+                predicted == stress_labels
+            ).sum().item()
+
+        avg_stress_loss = (
+            running_stress_loss / len(train_loader)
+        )
+
+        avg_domain_loss = (
+            running_domain_loss / len(train_loader)
+        )
+
+        train_accuracy = 100 * correct / total
 
         train_stress_losses.append(avg_stress_loss)
 
         train_domain_losses.append(avg_domain_loss)
+
+        train_accuracies.append(train_accuracy)
 
         # ---------------- VALIDATION ----------------
 
         model.eval()
 
         correct = 0
+
         total = 0
 
         with torch.no_grad():
@@ -366,13 +433,14 @@ def train_domain_generalisation(
 
                 total += stress_labels.size(0)
 
-                correct += (predicted == stress_labels).sum().item()
+                correct += (
+                    predicted == stress_labels
+                ).sum().item()
 
         val_accuracy = 100 * correct / total
 
         val_accuracies.append(val_accuracy)
 
-        # Save best model
         if val_accuracy > best_val_accuracy:
 
             best_val_accuracy = val_accuracy
@@ -382,7 +450,6 @@ def train_domain_generalisation(
                 for k, v in model.state_dict().items()
             }
 
-        # Update scheduler
         scheduler.step(val_accuracy)
 
         print(
@@ -390,12 +457,12 @@ def train_domain_generalisation(
             f"λ={lambda_:.3f} | "
             f"Stress Loss: {avg_stress_loss:.4f} | "
             f"Domain Loss: {avg_domain_loss:.4f} | "
+            f"Train Accuracy: {train_accuracy:.2f}% | "
             f"Val Accuracy: {val_accuracy:.2f}%"
         )
 
         print("-" * 75)
 
-    # Restore best weights
     if best_model_weights:
 
         model.load_state_dict(best_model_weights)
@@ -408,5 +475,6 @@ def train_domain_generalisation(
     return (
         train_stress_losses,
         train_domain_losses,
+        train_accuracies,
         val_accuracies
     )

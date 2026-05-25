@@ -127,7 +127,7 @@ def evaluate_ensemble(
 
     accuracy = 100 * correct / total
 
-    print(f"Ensemble Accuracy: {accuracy:.2f}%")
+    print(f"Ensemble Model Accuracy on Merged Test Dataset: {accuracy:.2f}%")
 
     return accuracy
 
@@ -215,7 +215,7 @@ def evaluate_improved_ensemble(
 
     accuracy = 100 * correct / total
 
-    print(f"Improved Ensemble Accuracy: {accuracy:.2f}%")
+    print(f"Improved Ensemble Model Accuracy on Merged Test Dataset: {accuracy:.2f}%")
 
     return accuracy
 

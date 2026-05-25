@@ -53,31 +53,7 @@ def create_model():
     return model
 
 
-# ============================================================
-# SECTION 2 - CREATE BASELINE MODELS
-# ============================================================
 
-tomato_model = create_model()
-
-maize_model = create_model()
-
-maize2_model = create_model()
-
-print("All Baseline Models Created Successfully")
-
-
-# ============================================================
-# SECTION 3 - IMPROVED MODELS
-# ============================================================
-# Separate improved models for fine-tuning experiments
-
-improved_tomato_model = create_model()
-
-improved_maize_model = create_model()
-
-improved_maize2_model = create_model()
-
-print("All Improved Models Created Successfully")
 
 
 # ============================================================
@@ -201,58 +177,6 @@ class FusionModel(nn.Module):
 
 
 # ============================================================
-# SECTION 7 - CREATE FUSION MODEL
-# ============================================================
-
-fusion_model = FusionModel().to(device)
-
-print("Fusion Model Created Successfully")
-
-
-# ============================================================
-# SECTION 8 - GRADIENT REVERSAL LAYER
-# ============================================================
-# Used in Domain Generalisation (DANN)
-
-class GradientReversalFunction(torch.autograd.Function):
-
-    @staticmethod
-    def forward(ctx, x, lambda_):
-
-        ctx.save_for_backward(
-            torch.tensor(
-                lambda_,
-                dtype=torch.float32
-            )
-        )
-
-        return x.clone()
-
-    @staticmethod
-    def backward(ctx, grad_output):
-
-        lambda_ = ctx.saved_tensors[0].item()
-
-        return -lambda_ * grad_output, None
-
-
-class GradientReversalLayer(nn.Module):
-
-    def __init__(self, lambda_=0.0):
-
-        super().__init__()
-
-        self.lambda_ = lambda_
-
-    def forward(self, x):
-
-        return GradientReversalFunction.apply(
-            x,
-            self.lambda_
-        )
-
-
-# ============================================================
 # SECTION 9 - DOMAIN GENERALISATION MODEL
 # ============================================================
 # DANN:
@@ -331,11 +255,43 @@ class DomainGeneralisationModel(nn.Module):
 
 
 # ============================================================
-# SECTION 10 - CREATE DG MODEL
+# SECTION 8 - GRADIENT REVERSAL LAYER
 # ============================================================
+# Used in Domain Generalisation (DANN)
 
-dg_model = DomainGeneralisationModel(
-    num_domains=3
-).to(device)
+class GradientReversalFunction(torch.autograd.Function):
 
-print("Domain Generalisation Model Created Successfully")
+    @staticmethod
+    def forward(ctx, x, lambda_):
+
+        ctx.save_for_backward(
+            torch.tensor(
+                lambda_,
+                dtype=torch.float32
+            )
+        )
+
+        return x.clone()
+
+    @staticmethod
+    def backward(ctx, grad_output):
+
+        lambda_ = ctx.saved_tensors[0].item()
+
+        return -lambda_ * grad_output, None
+
+
+class GradientReversalLayer(nn.Module):
+
+    def __init__(self, lambda_=0.0):
+
+        super().__init__()
+
+        self.lambda_ = lambda_
+
+    def forward(self, x):
+
+        return GradientReversalFunction.apply(
+            x,
+            self.lambda_
+        )

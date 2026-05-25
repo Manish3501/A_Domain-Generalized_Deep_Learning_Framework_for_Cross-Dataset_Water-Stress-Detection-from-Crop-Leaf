@@ -107,15 +107,14 @@ def train_model(
 
         val_accuracies.append(val_accuracy)
 
-        print(f"Epoch [{epoch+1}/{epochs}]")
+        print(
+            f"Epoch [{epoch+1}/{epochs}] | "
+            f"Train Loss: {avg_train_loss:.4f} | "
+            f"Train Accuracy: {train_accuracy:.2f}% | "
+            f"Validation Accuracy: {val_accuracy:.2f}%"
+        )
 
-        print(f"Train Loss: {avg_train_loss:.4f}")
-
-        print(f"Train Accuracy: {train_accuracy:.2f}%")
-
-        print(f"Validation Accuracy: {val_accuracy:.2f}%")
-
-        print("-" * 40)
+        print("-" * 75)
 
     return (
         train_losses,
@@ -286,15 +285,13 @@ def train_fusion_model(
                 for k, v in model.state_dict().items()
             }
 
-        print(f"Epoch [{epoch+1}/{epochs}]")
-
-        print(f"Fusion Loss: {avg_loss:.4f}")
-
-        print(f"Train Accuracy: {train_accuracy:.2f}%")
-
-        print(f"Validation Accuracy: {val_accuracy:.2f}%")
-
-        print("-" * 50)
+        print(
+            f"Epoch [{epoch+1}/{epochs}] | "
+            f"Fusion Loss: {avg_loss:.4f} | "
+            f"Train Accuracy: {train_accuracy:.2f}% | "
+            f"Validation Accuracy: {val_accuracy:.2f}%"
+        )
+        print("-" * 75)
 
     if best_model_weights:
 
@@ -463,14 +460,14 @@ def train_domain_generalisation(
 
         print("-" * 75)
 
-    if best_model_weights:
+    """if best_model_weights:
 
         model.load_state_dict(best_model_weights)
 
         print(
             f"\nBest Val Accuracy: "
             f"{best_val_accuracy:.2f}% — weights restored."
-        )
+        )"""
 
     return (
         train_stress_losses,

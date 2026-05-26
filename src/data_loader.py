@@ -1,23 +1,17 @@
+#-----------------------------------------------------------------------------------------------------------------------
 
-# ============================================================
-# IMPORTS
-# ============================================================
+# Section 1 - Import Libraries
 
 import os
 import cv2
 import torch
 import numpy as np
-
-from torch.utils.data import (
-    Dataset,
-    DataLoader,
-    ConcatDataset
-)
-
+from torch.utils.data import (Dataset, DataLoader, ConcatDataset)
 from sklearn.model_selection import train_test_split
 
+#-----------------------------------------------------------------------------------------------------------------------
 
-#Section 4 - Custom Dataset Class
+#Section 2 - Custom Dataset Class
 
 #This willl load images from folders.
 
@@ -35,15 +29,12 @@ class LeafDataset(Dataset):
         label = self.labels[idx]
         
         if isinstance(image, str):
-
             image = cv2.imread(image)
-
             image = cv2.cvtColor(
                 image,
                 cv2.COLOR_BGR2RGB
             )
         else:
-
             image = image.astype("uint8")
         
         # Apply transformations if any
@@ -52,18 +43,17 @@ class LeafDataset(Dataset):
         
         return image, label
     
+#-----------------------------------------------------------------------------------------------------------------------
 
-
-#Section 5 - Load Dataset Paths and Labels
+#Section 3 - Load Dataset Paths and Labels
 
 #This section collects all image paths and labels and label mapping will be 0 - Non Stress and 1 - Streess.
-#
 # 1. Tomato Dataset
 # 2. Maize Folder Dataset
 # 3. Maize .npy Dataset
-#
+
 # Tomato Dataset Mapping
-#
+
 # 100%_field_capacity → Non-stress (0)
 # 75%_field_capacity  → Stress (1)
 # 50%_field_capacity  → Stress (1)
@@ -110,7 +100,7 @@ def load_tomato_dataset(dataset_path):
 
 
 # Maize Folder Dataset Mapping
-#
+
 # WW  → Non-stress (0)
 # MIS → Stress (1)
 # MOD → Stress (1)
@@ -180,10 +170,7 @@ print("Unique Labels:", np.unique(train_maize2_labels))
 # 0 - Well-watered
 # 1 - Reduced-watered
 # 2 - Drought-stressed
-#
-# New Labels:
-# 0 - Non-stress
-# 1 - Stress
+
 
 train_maize2_labels = np.where(train_maize2_labels == 0, 0, 1)
 
@@ -208,8 +195,9 @@ print(np.bincount(val_maize2_labels))
 print("Test Label Distribution:")
 print(np.bincount(test_maize2_labels))
 
+#-----------------------------------------------------------------------------------------------------------------------
 
-#Section 7 - Load all datasets
+#Section 4 - Load all datasets
 
 tomato_image_path = "/Users/manish/Documents/Semister 2/7. Project/Dataset/Tomato Plant dataset/dataset"
 maize_image_path = "/Users/manish/Documents/Semister 2/7. Project/Dataset/Maize Water Stress"
@@ -226,9 +214,11 @@ print("Maize Images:", len(maize_images))
 print("Tomato Labels:", np.unique(tomato_labels))
 print("Maize Labels:", np.unique(maize_labels))
 
+#-----------------------------------------------------------------------------------------------------------------------
 
+#Section 5 - Train Test Split
 
-#Section 9 - Train Test Split
+#Tomato Dataset Split
 
 train_tomato_data, temp_tomato_data, train_tomato_labels, temp_tomato_labels = train_test_split(
     tomato_images,
@@ -250,6 +240,7 @@ print("Tomato Train:", len(train_tomato_data))
 print("Tomato Validation:", len(val_tomato_data))
 print("Tomato Test:", len(test_tomato_data))
 
+#Maize Dataset Split
 
 train_maize_data, temp_maize_data, train_maize_labels, temp_maize_labels = train_test_split(
     maize_images,
@@ -259,7 +250,6 @@ train_maize_data, temp_maize_data, train_maize_labels, temp_maize_labels = train
     stratify=maize_labels
 )
 
-# Second split → validation + test
 val_maize_data, test_maize_data, val_maize_labels, test_maize_labels = train_test_split(
     temp_maize_data,
     temp_maize_labels,
@@ -272,20 +262,20 @@ print("Maize Train:", len(train_maize_data))
 print("Maize Validation:", len(val_maize_data))
 print("Maize Test:", len(test_maize_data))
 
+#-----------------------------------------------------------------------------------------------------------------------
 
-
-# Section 2 - Domain Labelled Datasets
+# Section 6 - Domain Labelled Datasets
 
 #Added the domian_id so which tells the model which dataset the image is coming from.
 
 class DomainLeafDataset(Dataset):
     """
     Extends LeafDataset with a domain_id per sample.
-    domain_id: 0 = Tomato, 1 = Maize (folder), 2 = Maize2
+    domain_id: 0 = Tomato, 1 = Maize, 2 = Maize2
     
     Why domain_id matters: The DANN models domain classifier needs this label
     to learn which domain each image belongs to — and then the gradient reversal
-    forces the feature extractor to UNLEARN those domain cues.
+    forces the feature extractor to unlearn those domain cues.
     """
  
     def __init__(self, images, labels, domain_id, transform=None):
@@ -312,3 +302,5 @@ class DomainLeafDataset(Dataset):
  
         # Return domain_id as a tensor scalar alongside image and stress label
         return image, label, torch.tensor(self.domain_id, dtype=torch.long)
+    
+#-----------------------------------------------------------------------------------------------------------------------

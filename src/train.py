@@ -1,10 +1,14 @@
+#-----------------------------------------------------------------------------------------------------------------------
+
+# Section 1 - Import Libraries
+ 
 import torch
 import numpy as np
 
+#-----------------------------------------------------------------------------------------------------------------------
 
-# ============================================================
-# SECTION 1 - BASIC TRAINING FUNCTION
-# ============================================================
+# Section 2 - Basic Training Function
+
 # Trains normal CNN models
 # Used for:
 # - Tomato Model
@@ -23,17 +27,13 @@ def train_model(
 
     train_losses = []
     train_accuracies = []
-
     val_accuracies = []
 
     for epoch in range(epochs):
 
-        # ---------------- TRAINING ----------------
-
+        # Training phase
         model.train()
-
         running_loss = 0
-
         correct = 0
         total = 0
 
@@ -41,7 +41,6 @@ def train_model(
 
             # Move data to CPU/GPU
             images = images.to(device)
-
             labels = labels.to(device)
 
             # Clear old gradients
@@ -75,10 +74,10 @@ def train_model(
         train_accuracy = 100 * correct / total
 
         train_losses.append(avg_train_loss)
-
         train_accuracies.append(train_accuracy)
 
-        # ---------------- VALIDATION ----------------
+
+        # Validation phase
 
         model.eval()
 
@@ -90,7 +89,6 @@ def train_model(
             for images, labels in val_loader:
 
                 images = images.to(device)
-
                 labels = labels.to(device)
 
                 outputs = model(images)
@@ -122,10 +120,9 @@ def train_model(
         val_accuracies
     )
 
+#-----------------------------------------------------------------------------------------------------------------------
 
-# ============================================================
-# SECTION 2 - FEATURE FUSION TRAINING
-# ============================================================
+# Section 3 - Feature Fusion Training
 
 def train_fusion_model(
     model,
@@ -142,34 +139,24 @@ def train_fusion_model(
 ):
 
     train_losses = []
-
     train_accuracies = []
-
     val_accuracies = []
-
     best_val_accuracy = 0.0
-
     best_model_weights = None
 
     for epoch in range(epochs):
 
-        # ====================================================
-        # TRAINING
-        # ====================================================
-
+        # Training phase
         model.train()
 
         running_loss = 0
-
         correct = 0
         total = 0
 
         for (
 
             (tomato_imgs, tomato_labels),
-
             (maize_imgs, maize_labels),
-
             (maize2_imgs, maize2_labels)
 
         ) in zip(
@@ -180,11 +167,8 @@ def train_fusion_model(
         ):
 
             tomato_imgs = tomato_imgs.to(device)
-
             maize_imgs = maize_imgs.to(device)
-
             maize2_imgs = maize2_imgs.to(device)
-
             labels = tomato_labels.to(device)
 
             fusion_optimizer.zero_grad()
@@ -220,12 +204,10 @@ def train_fusion_model(
         train_accuracy = 100 * correct / total
 
         train_losses.append(avg_loss)
-
         train_accuracies.append(train_accuracy)
 
-        # ====================================================
-        # VALIDATION
-        # ====================================================
+
+        # Validation phase
 
         model.eval()
 
@@ -237,9 +219,7 @@ def train_fusion_model(
             for (
 
                 (tomato_imgs, tomato_labels),
-
                 (maize_imgs, maize_labels),
-
                 (maize2_imgs, maize2_labels)
 
             ) in zip(
@@ -250,11 +230,8 @@ def train_fusion_model(
             ):
 
                 tomato_imgs = tomato_imgs.to(device)
-
                 maize_imgs = maize_imgs.to(device)
-
                 maize2_imgs = maize2_imgs.to(device)
-
                 labels = tomato_labels.to(device)
 
                 outputs = model(
@@ -303,10 +280,9 @@ def train_fusion_model(
         val_accuracies
     )
 
+#-----------------------------------------------------------------------------------------------------------------------
 
-# ============================================================
-# SECTION 3 - DOMAIN GENERALISATION TRAINING
-# ============================================================
+# Section 4 - Domain Generalisation Training
 
 def train_domain_generalisation(
     model,
@@ -321,15 +297,10 @@ def train_domain_generalisation(
 ):
 
     train_stress_losses = []
-
     train_domain_losses = []
-
     train_accuracies = []
-
     val_accuracies = []
-
     best_val_accuracy = 0.0
-
     best_model_weights = None
 
     for epoch in range(epochs):
@@ -343,20 +314,17 @@ def train_domain_generalisation(
         model.gradient_reversal.lambda_ = lambda_
 
         running_stress_loss = 0.0
-
         running_domain_loss = 0.0
 
         correct = 0
         total = 0
 
-        # ---------------- TRAINING ----------------
+        # Training Phase
 
         for images, stress_labels, domain_labels in train_loader:
 
             images = images.to(device)
-
             stress_labels = stress_labels.to(device)
-
             domain_labels = domain_labels.to(device)
 
             optimizer.zero_grad()
@@ -403,17 +371,15 @@ def train_domain_generalisation(
         train_accuracy = 100 * correct / total
 
         train_stress_losses.append(avg_stress_loss)
-
         train_domain_losses.append(avg_domain_loss)
-
         train_accuracies.append(train_accuracy)
 
-        # ---------------- VALIDATION ----------------
+
+        # Validation Phase
 
         model.eval()
 
         correct = 0
-
         total = 0
 
         with torch.no_grad():
@@ -421,7 +387,6 @@ def train_domain_generalisation(
             for images, stress_labels, _ in val_loader:
 
                 images = images.to(device)
-
                 stress_labels = stress_labels.to(device)
 
                 stress_out, _ = model(images)
@@ -475,3 +440,5 @@ def train_domain_generalisation(
         train_accuracies,
         val_accuracies
     )
+
+#-----------------------------------------------------------------------------------------------------------------------

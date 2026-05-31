@@ -29,10 +29,12 @@ else:
 
 # Section 3 - Create Base Model
 
-# The base model I have used is moilenetv2 which is a lightweight CNN architecture that is efficient and performs well on image classification tasks. 
+# The base model I have used is moileNetV2 which is a lightweight CNN architecture that is efficient and performs well on image classification tasks. 
 # I have replaced the final layer to output 2 classes (stress vs non-stress) and moved the model for training.
 # 0 = Non-stress
 # 1 = Stress
+
+# Reference - https://docs.pytorch.org/vision/main/models/generated/torchvision.models.mobilenet_v2.html
 
 def create_model():
 
@@ -41,13 +43,13 @@ def create_model():
         weights=models.MobileNet_V2_Weights.DEFAULT
     )
 
-    # Replace final layer for binary classification
+    # Replace final layer for binary classification into 2 classes stresss and non-stress according to project requirement
     model.classifier[1] = nn.Linear(
         model.last_channel,
         2
-    )
+    )     
 
-    # Move model to GPU/CPU
+    # Move model to GPU/CPU, it is important because image and model must on same device.
     model = model.to(device)
 
     return model
@@ -67,7 +69,7 @@ def create_feature_extractor():
     )
 
     # Remove classifier
-    feature_extractor = model.features
+    feature_extractor = model.features         # This line is important it is saying to keep only convolutional layers and feature extraction backbone
 
     # Move to device
     feature_extractor = feature_extractor.to(device)
@@ -97,15 +99,15 @@ class FusionModel(nn.Module):
 
     def __init__(self):
 
-        super(FusionModel, self).__init__()
+        super(FusionModel, self).__init__()   # Initialising PyTorch class
 
         # Feature extractors
-        self.tomato_extractor = tomato_feature_extractor
+        self.tomato_extractor = tomato_feature_extractor    # Extracting deep CNN features independently from perticular dataset
         self.maize_extractor = maize_feature_extractor
         self.maize2_extractor = maize2_feature_extractor
 
         # Global pooling
-        self.pool = nn.AdaptiveAvgPool2d((1,1))
+        self.pool = nn.AdaptiveAvgPool2d((1,1))    # Reference - https://docs.pytorch.org/docs/2.12/generated/torch.nn.AdaptiveAvgPool2d.html
 
         # Final classifier
         self.classifier = nn.Sequential(
@@ -117,7 +119,7 @@ class FusionModel(nn.Module):
             nn.ReLU(),
             nn.Dropout(0.3),
             nn.Linear(128, 2)
-        )
+        )                                       # Reference - https://docs.pytorch.org/docs/2.12/generated/torch.nn.Sequential.html
 
     def forward(
         self,
@@ -137,7 +139,7 @@ class FusionModel(nn.Module):
         maize2_feat = self.pool(maize2_feat)
 
         # Flatten
-        tomato_feat = torch.flatten(tomato_feat, 1)
+        tomato_feat = torch.flatten(tomato_feat, 1)    #This is coverting into batch and channel which is required for linear layers
         maize_feat = torch.flatten(maize_feat, 1)
         maize2_feat = torch.flatten(maize2_feat, 1)
 
@@ -145,7 +147,7 @@ class FusionModel(nn.Module):
         fused_features = torch.cat(
             [tomato_feat, maize_feat, maize2_feat],
             dim=1
-        )
+        )                                              #This step combines tomato, maize and maize2 features.
 
         # Final prediction
         output = self.classifier(fused_features)
@@ -177,23 +179,26 @@ class DomainGeneralisationModel(nn.Module):
 
         # Stress classifier
         self.stress_classifier = nn.Sequential(
-
             nn.Linear(1280, 512),
-            nn.ReLU(),
-            nn.Dropout(0.5),
+            nn.ReLU(),                                             # Allows model to learn complex patterns
+            nn.Dropout(0.5),          #it randomly disables 50% neurons during trainning to avoid overfitting
             nn.Linear(512, 128),
             nn.ReLU(),
             nn.Dropout(0.3),
             nn.Linear(128, 2)
         )
 
+# Dropout reference - https://docs.pytorch.org/docs/2.12/generated/torch.nn.Dropout.html
+
+
         # Domain classifier
         self.gradient_reversal = GradientReversalLayer(
             lambda_=0.0
         )
+# The gradient reversal is important bacause for forward pass it acts normally and in backward pass it reveres gradients.
+# so it forces the feature extractor to learn domain invarient features instead of dataset specific shortcuts.
 
         self.domain_classifier = nn.Sequential(
-
             nn.Linear(1280, 256),
             nn.ReLU(),
             nn.Dropout(0.4),
@@ -241,7 +246,6 @@ class GradientReversalFunction(torch.autograd.Function):
 
     @staticmethod
     def backward(ctx, grad_output):
-
         lambda_ = ctx.saved_tensors[0].item()
 
         return -lambda_ * grad_output, None
@@ -250,7 +254,6 @@ class GradientReversalFunction(torch.autograd.Function):
 class GradientReversalLayer(nn.Module):
 
     def __init__(self, lambda_=0.0):
-
         super().__init__()
 
         self.lambda_ = lambda_

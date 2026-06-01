@@ -45,10 +45,10 @@ def evaluate_model(
 
             _, predicted = torch.max(outputs, 1)
 
-            total += labels.size(0)
+            total += labels.size(0)                 # The batch size (number of images in this batch, typically 32)
 
             correct += (
-                predicted == labels
+                predicted == labels                 # boolean tensor, True where prediction matches label
             ).sum().item()
 
     accuracy = 100 * correct / total
@@ -77,10 +77,13 @@ def ensemble_predict(
 
         image_tensor = image_tensor.unsqueeze(0).to(device)
 
+        # unsqueeze(0) — Adds a batch dimension. A single image tensor has shape (3, 224, 224) — 3 colour channels, 224×224 pixels. 
+        # Neural networks always expect batches, so shape must be (1, 3, 224, 224). .unsqueeze(0) inserts a dimension of size 1 at position 0.
+
         pred1 = torch.softmax(
             tomato_model(image_tensor),
             dim=1
-        )
+        )                                             # Softmax converts raw model outputs into probabilities and softmax must be apply before averaging.
 
         pred2 = torch.softmax(
             maize_model(image_tensor),
@@ -333,6 +336,10 @@ def evaluate_dg_model(
 
             _, predicted = torch.max(stress_out, 1)
 
+            # Only stress_out is used at evaluation. domain_out is discarded. 
+            # At deployment time, the domain ID of an input image is unknown and irrelevant -
+            # the model produces one stress prediction regardless of which plant species it is looking at. This is the key practical advantage over the Fusion model.
+
             # Overall accuracy
             total += labels.size(0)
 
@@ -407,7 +414,7 @@ def evaluate_dg_model(
 
 # Section 10 - Collect Predictions from any model
 
-def collect_predictions_single(model, test_loader):
+def collect_predictions_single(model, test_loader, device):
     """
     For models that take ONE image and return ONE output (Ensemble, DG models).
     Returns arrays of predictions, true labels, and stress probabilities.
@@ -488,7 +495,7 @@ def collect_predictions_fusion(fusion_model, t_loader, m_loader, m2_loader, devi
 
 #-----------------------------------------------------------------------------------------------------------------------
 
-# Section 10 - Define all metrics 
+# Section 11 - Define all metrics 
 
 def compute_all_metrics(preds, labels, probs, model_name):
     """

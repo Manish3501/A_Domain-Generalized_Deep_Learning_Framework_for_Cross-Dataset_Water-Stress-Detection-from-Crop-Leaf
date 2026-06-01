@@ -69,7 +69,7 @@ def create_feature_extractor():
     )
 
     # Remove classifier
-    feature_extractor = model.features         # This line is important it is saying to keep only convolutional layers and feature extraction backbone
+    feature_extractor = model.features         # This line is important it is saying to keep only convolutional layers and feature extraction backbone - 18 layers of feature extraction
 
     # Move to device
     feature_extractor = feature_extractor.to(device)
@@ -174,7 +174,6 @@ class DomainGeneralisationModel(nn.Module):
         )
 
         self.feature_extractor = backbone.features
-
         self.pool = nn.AdaptiveAvgPool2d((1,1))
 
         # Stress classifier
@@ -208,15 +207,15 @@ class DomainGeneralisationModel(nn.Module):
     def forward(self, x):
 
         # Feature extraction
-        features = self.feature_extractor(x)
-        features = self.pool(features)
+        features = self.feature_extractor(x)   #  image goes through 18 convolutional layers, output shape (batch, 1280, 7, 7)
+        features = self.pool(features)     # global average pooling, output shape (batch, 1280, 1, 1)
         features = torch.flatten(features, 1)
 
         # Stress prediction
-        stress_out = self.stress_classifier(features)
+        stress_out = self.stress_classifier(features)   # 2 hidden layers, output shape (batch, 2) - stress logits
 
         # Domain prediction
-        reversed_features = self.gradient_reversal(features)
+        reversed_features = self.gradient_reversal(features)   # identity in forward pass, gradient flip in backward pass
 
         domain_out = self.domain_classifier(
             reversed_features
@@ -242,27 +241,33 @@ class GradientReversalFunction(torch.autograd.Function):
             )
         )
 
-        return x.clone()
+        return x.clone()   # by doing this it manually override the backward pass to implement gradient reversal
 
     @staticmethod
     def backward(ctx, grad_output):
         lambda_ = ctx.saved_tensors[0].item()
 
         return -lambda_ * grad_output, None
+    
+    # grad_output is the gradient arriving from the domain classifier (telling the backbone "change your weights this way to better identify domains"). 
+    # Multiplying by - lambda reverses it: the backbone instead changes its weights to make domain identification harder. 
+    # None is returned for lambda because it has no gradient (it is a hyperparameter, not a trainable weight).
+
 
 
 class GradientReversalLayer(nn.Module):
 
     def __init__(self, lambda_=0.0):
         super().__init__()
-
         self.lambda_ = lambda_
 
     def forward(self, x):
-
         return GradientReversalFunction.apply(
             x,
             self.lambda_
         )
 
+
+# Reference for Domain Generalization (DANN) - https://github.com/fungtion/DANN/blob/master/train/main.py
+#                                            - https://github.com/jvanvugt/pytorch-domain-adaptation 
 #-----------------------------------------------------------------------------------------------------------------------

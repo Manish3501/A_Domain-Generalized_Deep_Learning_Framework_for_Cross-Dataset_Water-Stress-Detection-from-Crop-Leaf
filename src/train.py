@@ -43,7 +43,7 @@ def train_model(
             images = images.to(device)
             labels = labels.to(device)
 
-            # Clear old gradients
+            # Clear old gradients - if not reset them then the gardients from previous batch adds to the current one.
             optimizer.zero_grad()
 
             # Forward pass
@@ -84,7 +84,7 @@ def train_model(
         correct = 0
         total = 0
 
-        with torch.no_grad():
+        with torch.no_grad():   # This tells pytorch not to track gradients during validation which saves memory and time.
 
             for images, labels in val_loader:
 
@@ -159,7 +159,7 @@ def train_fusion_model(
             (maize_imgs, maize_labels),
             (maize2_imgs, maize2_labels)
 
-        ) in zip(
+        ) in zip(                                     # zip() Iterates three data loaders simultaneously, drawing one batch from each per step. 
 
             fusion_tomato_loader,
             fusion_maize_loader,
@@ -309,7 +309,7 @@ def train_domain_generalisation(
 
         p = epoch / epochs
 
-        lambda_ = 2.0 / (1.0 + np.exp(-10.0 * p)) - 1.0
+        lambda_ = 2.0 / (1.0 + np.exp(-10.0 * p)) - 1.0           # The formula is a sigmoid function that outputs 0.0 at p=0, 0.46 at p=0.5, 0.96 at p=1.0
 
         model.gradient_reversal.lambda_ = lambda_
 
@@ -334,14 +334,15 @@ def train_domain_generalisation(
             stress_loss = dg_stress_criterion(
                 stress_out,
                 stress_labels
-            )
+            )                                             # Cross-entropy between predicted stress class and true stress label. This is the primary objective.
 
             domain_loss = dg_domain_criterion(
                 domain_out,
                 domain_labels
-            )
+            )                                             # Cross-entropy between predicted domain class and true domain label. 
+                                                          # Because of the GRL, minimising this loss actually makes the backbone MORE domain-invariant (the GRL flips the gradient direction).
 
-            total_loss = stress_loss + lambda_ * domain_loss
+            total_loss = stress_loss + lambda_ * domain_loss                   # weighted sum
 
             total_loss.backward()
 

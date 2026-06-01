@@ -1,2 +1,2 @@
-# leaf-based-water-stress-detection
+# Leaf-based-water-stress-detection
 Master Thesis Project

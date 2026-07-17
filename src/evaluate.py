@@ -549,7 +549,6 @@ def plot_confusion_matrix(preds, labels, model_name):
     Non-Stress               TN            FP   ← False alarm (annoying but safe)
     Stress                   FN            TP   ← MISSED stress (dangerous for agriculture)
 
-    What to tell your mentor:
     - High diagonal = model is correct
     - FN (bottom-left) = stressed plants the model MISSED — most dangerous cell
     - FP (top-right) = non-stressed plants called stress — false alarm

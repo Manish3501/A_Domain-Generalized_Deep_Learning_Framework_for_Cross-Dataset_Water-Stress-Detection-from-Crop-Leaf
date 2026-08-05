@@ -430,7 +430,7 @@ def collect_predictions_single(model, test_loader, device):
             else:
                 images, stress_labels = batch      # Regular loader
 
-            images        = images.to(device)
+            images = images.to(device)
             stress_labels = stress_labels.to(device)
 
             # For DG model, forward returns (stress_out, domain_out)
@@ -498,93 +498,49 @@ def collect_predictions_fusion(fusion_model, t_loader, m_loader, m2_loader, devi
 # Section 11 - Define all metrics 
 
 def compute_all_metrics(preds, labels, probs, model_name):
-    """
-    Computes and prints the complete evaluation suite.
-    Returns a dict of all metric values (useful for the comparison table later).
-    """
-    acc       = 100 * accuracy_score(labels, preds)
-    precision = precision_score(labels, preds, pos_label=1, zero_division=0)
-    recall    = recall_score(labels, preds, pos_label=1, zero_division=0)
-    f1        = f1_score(labels, preds, pos_label=1, zero_division=0)
-    auc       = roc_auc_score(labels, probs)
+    auc = roc_auc_score(labels, probs)
 
-    print(f"\n{'-'*75}")
-    print(f"  {model_name}")
-    print(f"{'-'*75}")
-    print(f"\n Test Accuracy: {acc:.2f}%")
-    print(f"  Precision     : {precision:.4f}  → Of all predicted Stress, how many were really Stress?")
-    print(f"  Recall        : {recall:.4f}  → Of all actual Stress plants, how many did model catch?")
-    print(f"  F1-Score      : {f1:.4f}  → Balance of Precision and Recall")
-    print(f"  ROC-AUC       : {auc:.4f}  → Overall separability (1.0 = perfect, 0.5 = random)")
+    print(f" ROC-AUC : {auc:.4f} - Overall separability (1.0 = perfect, 0.5 = random)")
     print()
     print(classification_report(
         labels, preds,
         target_names=["Non-Stress (0)", "Stress (1)"],
         digits=4
     ))
-
-    return {
-        "model": model_name,
-        "accuracy": acc,
-        "precision": precision,
-        "recall": recall,
-        "f1": f1,
-        "auc": auc
-    }
+    return auc
 
 #-----------------------------------------------------------------------------------------------------------------------
 
 # Section 10 - Confusion Matrix
 
 def plot_confusion_matrix(preds, labels, model_name):
-    """
-    Plots two confusion matrices side by side:
-      Left  — raw counts (how many images in each cell)
-      Right — row-normalised percentages (easier to read when class sizes differ)
-
-    Reading the confusion matrix:
-    
-              Predicted →    Non-Stress    Stress
-    Actual ↓
-    Non-Stress               TN            FP   ← False alarm (annoying but safe)
-    Stress                   FN            TP   ← MISSED stress (dangerous for agriculture)
-
-    - High diagonal = model is correct
-    - FN (bottom-left) = stressed plants the model MISSED — most dangerous cell
-    - FP (top-right) = non-stressed plants called stress — false alarm
-    - For plant stress: you want FN as LOW as possible (high Recall)
-    """
-    cm     = confusion_matrix(labels, preds)
+    cm = confusion_matrix(labels, preds)
     cm_pct = confusion_matrix(labels, preds, normalize='true')
 
-    fig, axes = plt.subplots(1, 2, figsize=(14, 5))
-    fig.suptitle(f"Confusion Matrix — {model_name}", fontsize=13, y=1.01)
+    # Create annotation labels containing both count and percentage
+    annot = np.empty_like(cm).astype(object)
 
-    # Raw counts
-    sns.heatmap(cm, annot=True, fmt='d', cmap='Blues',
-                xticklabels=["Non-Stress", "Stress"],
-                yticklabels=["Non-Stress", "Stress"],
-                ax=axes[0], annot_kws={"size": 14})
-    axes[0].set_title("Raw Counts")
-    axes[0].set_ylabel("Actual Label", fontsize=11)
-    axes[0].set_xlabel("Predicted Label", fontsize=11)
+    for i in range(cm.shape[0]):
+        for j in range(cm.shape[1]):
+            annot[i, j] = f"{cm[i, j]}\n({cm_pct[i, j]*100:.1f}%)"
 
-    # Normalised percentages
-    sns.heatmap(cm_pct, annot=True, fmt='.1%', cmap='Greens',
-                xticklabels=["Non-Stress", "Stress"],
-                yticklabels=["Non-Stress", "Stress"],
-                ax=axes[1], annot_kws={"size": 14})
-    axes[1].set_title("Row-Normalised (%)")
-    axes[1].set_ylabel("Actual Label", fontsize=11)
-    axes[1].set_xlabel("Predicted Label", fontsize=11)
+    plt.figure(figsize=(6, 5))
 
+    sns.heatmap(
+        cm,
+        annot=annot,
+        fmt="",
+        cmap="Blues",
+        xticklabels=["Non-Stress", "Stress"],
+        yticklabels=["Non-Stress", "Stress"],
+        annot_kws={"size": 13}
+    )
+
+    plt.title(f"Confusion Matrix — {model_name}")
+    plt.ylabel("Actual Label", fontsize=11)
+    plt.xlabel("Predicted Label", fontsize=11)
     plt.tight_layout()
     plt.show()
-
-    tn, fp, fn, tp = cm.ravel()
-    print(f"  TP={tp}  TN={tn}  FP={fp}  FN={fn}")
-    print(f"  → Missed {fn} stressed plants (False Negatives)")
-    print(f"  → False alarms on {fp} non-stressed plants (False Positives)")
 
 #-----------------------------------------------------------------------------------------------------------------------
 
@@ -595,8 +551,8 @@ def plot_roc_curves(results_list):
     Plots all models' ROC curves on the same axes for easy visual comparison.
     
     What the ROC curve shows:
-      X-axis: False Positive Rate = FP / (FP + TN)  →  how many non-stressed get called stressed
-      Y-axis: True Positive Rate  = TP / (TP + FN)  →  how many stressed get correctly caught
+      X-axis: False Positive Rate = FP / (FP + TN)  -  how many non-stressed get called stressed
+      Y-axis: True Positive Rate  = TP / (TP + FN)  -  how many stressed get correctly caught
     
     A perfect model hugs the top-left corner (high TPR, low FPR).
     The diagonal line = random guessing (AUC = 0.5).

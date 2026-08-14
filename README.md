@@ -70,7 +70,7 @@ leaf-based-water-stress-detection/
 │   ├── transforms.py
 │   └── gradcam.py
 │
-├── notebooks/
+├── Notebooks/
 │   ├── Domain_Genaralization.ipynb
 │   ├── Ensemble_Learning.ipynb
 │   ├── Fusion_model.ipynb

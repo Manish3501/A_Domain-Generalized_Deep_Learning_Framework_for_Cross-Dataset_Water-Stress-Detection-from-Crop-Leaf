@@ -299,6 +299,7 @@ def train_domain_generalisation(
     train_stress_losses = []
     train_domain_losses = []
     train_accuracies = []
+    train_domain_accuracies = []
     val_accuracies = []
     best_val_accuracy = 0.0
     best_model_weights = None
@@ -318,6 +319,8 @@ def train_domain_generalisation(
 
         correct = 0
         total = 0
+        domain_correct = 0
+        domain_total = 0
 
         # Training Phase
 
@@ -341,6 +344,11 @@ def train_domain_generalisation(
                 domain_labels
             )                                             # Cross-entropy between predicted domain class and true domain label. 
                                                           # Because of the GRL, minimising this loss actually makes the backbone MORE domain-invariant (the GRL flips the gradient direction).
+            
+            # Track domain classifier accuracy
+            _, domain_predicted = torch.max(domain_out, 1)
+            domain_correct += (domain_predicted == domain_labels).sum().item()
+            domain_total += domain_labels.size(0)
 
             total_loss = stress_loss + lambda_ * domain_loss                   # weighted sum
 
@@ -371,11 +379,14 @@ def train_domain_generalisation(
 
         train_accuracy = 100 * correct / total
 
+        domain_accuracy = 100 * domain_correct / domain_total
+
+
         train_stress_losses.append(avg_stress_loss)
         train_domain_losses.append(avg_domain_loss)
         train_accuracies.append(train_accuracy)
-
-
+        train_domain_accuracies.append(domain_accuracy)
+        
         # Validation Phase
 
         model.eval()
@@ -421,6 +432,7 @@ def train_domain_generalisation(
             f"Stress Loss: {avg_stress_loss:.4f} | "
             f"Domain Loss: {avg_domain_loss:.4f} | "
             f"Train Accuracy: {train_accuracy:.2f}% | "
+            f"Domain Acc: {domain_accuracy:.2f}% | "
             f"Val Accuracy: {val_accuracy:.2f}%"
         )
 
@@ -439,6 +451,7 @@ def train_domain_generalisation(
         train_stress_losses,
         train_domain_losses,
         train_accuracies,
+        train_domain_accuracies,
         val_accuracies
     )
 

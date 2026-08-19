@@ -53,7 +53,7 @@ The task is binary classification:
 ## Datasets
 
 Three independently sourced leaf image datasets are used as three
-separate domains. All images are resized to 224×224 and normalised
+separate domains. All images are resized to 224×224 and normalized
 using ImageNet statistics (mean=[0.485, 0.456, 0.406],
 std=[0.229, 0.224, 0.225]).
 

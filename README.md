@@ -66,7 +66,7 @@ std=[0.229, 0.224, 0.225]).
 
 The datasets differ in crop type, image resolution, background,
 imaging conditions, and data collection procedure, making
-cross-dataset generalisation a genuine and non-trivial challenge.
+cross-dataset generalization a genuine and non-trivial challenge.
 
 > **Data Access:** The datasets were obtained directly from the
 > respective authors on request and are not included in this
@@ -95,7 +95,7 @@ leaf-based-water-stress-detection/
 │   │                        #     (concatenates 3x1280=3840 features)
 │   │                        #   GradientReversalLayer — custom autograd
 │   │                        #     function (negates gradient x -lambda)
-│   │                        #   DomainGeneralisationModel — DANN
+│   │                        #   DomainGeneralizationModel — DANN
 │   │                        #     (shared backbone + stress head + GRL
 │   │                        #     + domain head)
 │   │
@@ -104,7 +104,7 @@ leaf-based-water-stress-detection/
 │   │                        #     (used for ensemble sub-models)
 │   │                        #   train_fusion_model — trains the three-
 │   │                        #     stream fusion model with zip() loaders
-│   │                        #   train_domain_generalisation — trains the
+│   │                        #   train_domain_generalization — trains the
 │   │                        #     DANN with lambda annealing, dual loss,
 │   │                        #     GRL, ReduceLROnPlateau scheduler, and
 │   │                        #     domain classifier accuracy tracking
@@ -152,7 +152,7 @@ leaf-based-water-stress-detection/
 │   │                                # Note: evaluation limited to 48 samples
 │   │                                # due to zip()+drop_last constraints.
 │   │
-│   └── Domain_Generalisation.ipynb  # Trains and saves the proposed DANN
+│   └── Domain_generalization.ipynb  # Trains and saves the proposed DANN
 │                                    # (25 epochs, Adam lr=1e-4,
 │                                    # weight_decay=1e-4, batch=32,
 │                                    # ReduceLROnPlateau patience=3).
@@ -234,7 +234,7 @@ paths in `src/data_loader.py`. The three datasets require:
 ```
 1. Notebooks/Ensemble_Learning.ipynb
 2. Notebooks/Fusion_model.ipynb
-3. Notebooks/Domain_Generalisation.ipynb
+3. Notebooks/Domain_generalization.ipynb
 4. Evaluation/all_models_evaluation.ipynb
 ```
 
@@ -298,7 +298,7 @@ visual heterogeneity between the three datasets — a high-resolution
 tomato photograph, a field maize image, and a 48×48 pixel array will
 always retain some domain-identifiable characteristics. The partial
 suppression achieved was sufficient for the backbone to learn
-stress features that generalise across all three domains, as
+stress features that generalize across all three domains, as
 confirmed by the 97.32% combined test accuracy.
 
 ---
@@ -320,11 +320,4 @@ feedback throughout the research process.
 
 ---
 
-## References
 
-- Ganin et al. (2016) — Domain-Adversarial Training of Neural Networks.
-  *Journal of Machine Learning Research*, 17(59), 1–35.
-- Sandler et al. (2018) — MobileNetV2: Inverted Residuals and Linear
-  Bottlenecks. *CVPR*, 4510–4520.
-- Selvaraju et al. (2017) — Grad-CAM: Visual Explanations from Deep
-  Networks via Gradient-based Localization. *ICCV*, 618–626.

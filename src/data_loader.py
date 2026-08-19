@@ -54,10 +54,10 @@ class LeafDataset(Dataset):
 
 # Tomato Dataset Mapping
 
-# 100%_field_capacity → Non-stress (0)
-# 75%_field_capacity  → Stress (1)
-# 50%_field_capacity  → Stress (1)
-# 25%_field_capacity  → Stress (1)
+# 100%_field_capacity - Non-stress (0)
+# 75%_field_capacity  - Stress (1)
+# 50%_field_capacity  - Stress (1)
+# 25%_field_capacity  - Stress (1)
 
 def load_tomato_dataset(dataset_path):
     image_paths = []
@@ -101,10 +101,10 @@ def load_tomato_dataset(dataset_path):
 
 # Maize Folder Dataset Mapping
 
-# WW  → Non-stress (0)
-# MIS → Stress (1)
-# MOD → Stress (1)
-# WS  → Stress (1)
+# WW  - Non-stress (0)
+# MIS - Stress (1)
+# MOD - Stress (1)
+# WS  - Stress (1)
 
 def load_maize_dataset(dataset_path):
 
@@ -269,14 +269,10 @@ print("Maize Test:", len(test_maize_data))
 #Added the domian_id so which tells the model which dataset the image is coming from.
 
 class DomainLeafDataset(Dataset):
-    """
-    Extends LeafDataset with a domain_id per sample.
-    domain_id: 0 = Tomato, 1 = Maize, 2 = Maize2
-    
-    Why domain_id matters: The DANN models domain classifier needs this label
-    to learn which domain each image belongs to — and then the gradient reversal
-    forces the feature extractor to unlearn those domain cues.
-    """
+
+# domain_id: 0 = Tomato, 1 = Maize, 2 = Maize2
+# Why domain_id - The DANN models domain classifier needs this label to learn which domain each image belongs to
+
  
     def __init__(self, images, labels, domain_id, transform=None):
         self.images = images

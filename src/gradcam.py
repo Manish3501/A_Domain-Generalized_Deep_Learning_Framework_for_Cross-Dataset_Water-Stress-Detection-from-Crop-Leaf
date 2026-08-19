@@ -87,8 +87,6 @@ def find_good_examples(
 
             conf = probs[0, pred].item()
 
-
-        # Correct + confident
         if (
             pred == target_class
             and conf >= min_conf

@@ -397,7 +397,7 @@ def evaluate_dg_model(
         )
 
         print(
-            f"  {domain_names[domain_id]:20}: "
+            f"{domain_names[domain_id]:20}: "
             f"{domain_acc:.2f}%  "
             f"({domain_correct[domain_id]}/"
             f"{domain_total[domain_id]})"
@@ -415,10 +415,6 @@ def evaluate_dg_model(
 # Section 10 - Collect Predictions from any model
 
 def collect_predictions_single(model, test_loader, device):
-    """
-    For models that take ONE image and return ONE output (Ensemble, DG models).
-    Returns arrays of predictions, true labels, and stress probabilities.
-    """
     model.eval()
     all_preds, all_labels, all_probs = [], [], []
 
@@ -441,7 +437,7 @@ def collect_predictions_single(model, test_loader, device):
             else:
                 stress_out = output
 
-            probs       = torch.softmax(stress_out, dim=1)
+            probs = torch.softmax(stress_out, dim=1)
             stress_prob = probs[:, 1]              # Probability for class 1 (Stress)
             _, predicted = torch.max(stress_out, 1)
 
@@ -458,14 +454,9 @@ def collect_predictions_single(model, test_loader, device):
 #-----------------------------------------------------------------------------------------------------------------------
 
 def collect_predictions_fusion(fusion_model, t_loader, m_loader, m2_loader, device):
-    """
-    For the FusionModel only — needs 3 images simultaneously.
-    Uses tomato labels as the ground truth (matching your original fusion code).
-    
-    NOTE: This is the same design flaw discussed earlier — using only tomato
-    labels — but we keep it consistent with your original fusion code so the
-    comparison is honest.
-    """
+
+# For the FusionModel it needs 3 images simultaneously.
+
     fusion_model.eval()
     all_preds, all_labels, all_probs = [], [], []
 
@@ -473,13 +464,13 @@ def collect_predictions_fusion(fusion_model, t_loader, m_loader, m2_loader, devi
         for (t_imgs, t_labels), (m_imgs, _), (m2_imgs, _) in zip(
             t_loader, m_loader, m2_loader
         ):
-            t_imgs  = t_imgs.to(device)
-            m_imgs  = m_imgs.to(device)
+            t_imgs = t_imgs.to(device)
+            m_imgs = m_imgs.to(device)
             m2_imgs = m2_imgs.to(device)
-            labels  = t_labels.to(device)
+            labels = t_labels.to(device)
 
             outputs = fusion_model(t_imgs, m_imgs, m2_imgs)
-            probs   = torch.softmax(outputs, dim=1)
+            probs = torch.softmax(outputs, dim=1)
             stress_prob = probs[:, 1]
             _, predicted = torch.max(outputs, 1)
 
@@ -547,22 +538,6 @@ def plot_confusion_matrix(preds, labels, model_name):
 # Section 11 - ROC Curve
 
 def plot_roc_curves(results_list):
-    """
-    Plots all models' ROC curves on the same axes for easy visual comparison.
-    
-    What the ROC curve shows:
-      X-axis: False Positive Rate = FP / (FP + TN)  -  how many non-stressed get called stressed
-      Y-axis: True Positive Rate  = TP / (TP + FN)  -  how many stressed get correctly caught
-    
-    A perfect model hugs the top-left corner (high TPR, low FPR).
-    The diagonal line = random guessing (AUC = 0.5).
-    The area under the curve (AUC) summarises the entire curve in one number.
-    
-    Why ROC is better than accuracy alone:
-      It shows performance at EVERY possible threshold, not just the default 0.5.
-      You can choose a lower threshold to catch more stressed plants (higher recall)
-      at the cost of more false alarms — this trade-off is visible on the ROC curve.
-    """
     plt.figure(figsize=(9, 7))
     colors = ['blue', 'orange', 'green', 'red', 'purple']
 
@@ -582,51 +557,3 @@ def plot_roc_curves(results_list):
     plt.show()
 
 #-----------------------------------------------------------------------------------------------------------------------
-
-# Section 12 - Overfitting Checker
-
-def check_for_overfitting(train_accuracy, val_accuracy, test_accuracy, model_name):
-    """
-    Compares training vs validation vs test accuracy to diagnose overfitting.
-    
-    OVERFITTING:  Train accuracy >> Val/Test accuracy
-                  Model memorised training images, fails on new ones.
-                  Fix: more augmentation, more dropout, fewer epochs.
-
-    UNDERFITTING: All three are low
-                  Model hasn't learned enough.
-                  Fix: more epochs, lower learning rate, unfreeze more layers.
-
-    GOOD FIT:     Train ≈ Val ≈ Test (within ~5%)
-                  Model generalises well.
-
-    100% TRAIN ACCURACY WARNING:
-                  Almost always means overfitting or data leakage.
-                  Genuine 100% is only possible on tiny, very easy datasets.
-    """
-    gap_train_val  = abs(train_accuracy - val_accuracy)
-    gap_train_test = abs(train_accuracy - test_accuracy)
-
-    print(f"\n{'─'*75}")
-    print(f"  Overfitting Check — {model_name}")
-    print(f"{'─'*75}")
-    print(f"  Train Accuracy : {train_accuracy:.2f}%")
-    print(f"  Val   Accuracy : {val_accuracy:.2f}%")
-    print(f"  Test  Accuracy : {test_accuracy:.2f}%")
-    print(f"  Train–Val Gap  : {gap_train_val:.2f}%")
-
-    if train_accuracy >= 99.5:
-        print("WARNING: Near-100% train accuracy — likely overfitting or data leakage.")
-    elif gap_train_val > 15:
-        print("WARNING: Large train-val gap — overfitting. Add more dropout/augmentation.")
-    elif gap_train_val > 8:
-        print("MILD overfitting — acceptable but worth monitoring.")
-    else:
-        print("Good fit — train and val accuracy are close.")
-
-    if test_accuracy > train_accuracy + 2:
-        print("WARNING: Test accuracy > Train accuracy — possible data leakage or very easy test set.")
-
-#-----------------------------------------------------------------------------------------------------------------------
-
-

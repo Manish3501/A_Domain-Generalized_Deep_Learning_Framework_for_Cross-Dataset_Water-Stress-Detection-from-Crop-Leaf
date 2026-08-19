@@ -111,7 +111,6 @@ class FusionModel(nn.Module):
 
         # Final classifier
         self.classifier = nn.Sequential(
-
             nn.Linear(1280 * 3, 512),
             nn.ReLU(),
             nn.Dropout(0.3),
@@ -215,7 +214,7 @@ class DomainGeneralisationModel(nn.Module):
         stress_out = self.stress_classifier(features)   # 2 hidden layers, output shape (batch, 2) - stress logits
 
         # Domain prediction
-        reversed_features = self.gradient_reversal(features)   # identity in forward pass, gradient flip in backward pass
+        reversed_features = self.gradient_reversal(features)   # identical in forward pass, gradient flip in backward pass
 
         domain_out = self.domain_classifier(
             reversed_features

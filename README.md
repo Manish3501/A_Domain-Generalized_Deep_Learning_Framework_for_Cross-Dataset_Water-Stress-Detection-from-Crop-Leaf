@@ -315,9 +315,7 @@ m.chaudhari2@universityofgalway.ie
 ## Acknowledgements
 
 The datasets used in this project were obtained from the respective
-authors on request. The project supervisor provided guidance and
-feedback throughout the research process.
-
+authors on request.
 ---
 
 

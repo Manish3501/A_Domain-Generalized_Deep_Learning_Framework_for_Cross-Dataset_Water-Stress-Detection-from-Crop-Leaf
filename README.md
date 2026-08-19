@@ -5,7 +5,7 @@
 This project presents a domain-adversarial deep learning framework for
 detecting plant water stress from crop leaf images across three
 independently collected datasets. The core challenge addressed is
-cross-dataset generalisation — existing models train and test on a
+cross-dataset generalization — existing models train and test on a
 single dataset and fail when applied to images from different crops,
 sensors, or environments. This work treats three datasets as three
 distinct domains and uses a Domain-Adversarial Neural Network (DANN)

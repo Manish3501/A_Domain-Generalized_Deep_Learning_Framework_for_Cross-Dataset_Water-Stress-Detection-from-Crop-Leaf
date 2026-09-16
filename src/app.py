@@ -115,7 +115,7 @@ def predict(image):
 # Page config
 # -------------------------------------------------------
 st.set_page_config(
-    page_title="Water Stress Detection Dashboard",
+    page_title="A Domain-Adversarial Deep Learning Framework for Cross-Dataset Water Stress Detection from Crop Leaf Images",
     page_icon="🌿",
     layout="wide",
     initial_sidebar_state="expanded"
@@ -209,8 +209,8 @@ University of Galway, Ireland
 # -------------------------------------------------------
 if page == "🏠 Overview":
 
-    st.markdown("# 🌿 Crop Water Stress Detection")
-    st.markdown("### Domain-Adversarial Deep Learning across Three Heterogeneous Datasets")
+    st.markdown("# 🌿 A Domain-Adversarial Deep Learning Framework for Cross-Dataset Water Stress Detection from Crop Leaf Images")
+    st.markdown("### Cross-Dataset Water Stress Detection from Crop Leaf Images")
     st.markdown("---")
 
     col1, col2, col3, col4 = st.columns(4)
